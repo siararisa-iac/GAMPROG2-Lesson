@@ -4,13 +4,13 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
-    [SerializeField]
-    private GameObject target;
 
-    private float rotationX, rotationY;
+    [SerializeField] private Transform player;
+    [SerializeField] private Transform playerVisuals
+        ;
+    [SerializeField] private Transform orientation;
 
-    [SerializeField]
-    private float headRotationLimit = 60f;
+    float rotationSpeed = 10;
 
     // Start is called before the first frame update
     void Start()
@@ -23,27 +23,18 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
-        //look up and down is based on the x-axis rotation
-        rotationX += Input.GetAxis("Mouse Y");
-        //look left and right is based on the y-axis rotation
-        rotationY += Input.GetAxis("Mouse X");
+        Vector3 viewDir = player.position - new Vector3(transform.position.x, player.position.y, transform.position.z);
+        orientation.forward = viewDir.normalized;
 
-        //Limit the value of our lookup/down based on the head rotation value
-        rotationX = Mathf.Clamp(rotationX, -headRotationLimit, headRotationLimit);
+        float horizontalInput = Input.GetAxis("Horizontal");
+        float verticalInput = Input.GetAxis("Vertical");
+
+        Vector3 inputDir = orientation.forward * verticalInput + orientation.right * horizontalInput;
+
+        if(inputDir != Vector3.zero)
+        {
+            playerVisuals.forward = Vector3.Slerp(playerVisuals.forward, inputDir.normalized, Time.deltaTime * rotationSpeed);
+        }
     }
 
-    private void LateUpdate()
-    {
-        //rotate the camera to face our mouse direction
-        Quaternion rotation = Quaternion.Euler(-rotationX, rotationY, 0);
-        transform.rotation = rotation;
-
-        //make the camera follow the target
-        transform.position = target.transform.position;
-        //rotate the target to face the camera direction
-        target.transform.rotation = Quaternion.Euler(
-            target.transform.rotation.x,
-            rotationY,
-            target.transform.rotation.z);
-    }
 }
