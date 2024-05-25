@@ -9,11 +9,16 @@ public class ThirdPersonMovement : MonoBehaviour
 
     [SerializeField]
     private float moveSpeed = 2.0f;
+    [SerializeField]
+    private float rotationSmoothTime = 0.1f;
     
     private CharacterController controller;
     private float gravity = -9.8f;
 
     private float currentSpeed;
+    private float currentAngleVelocity;
+    private float currentAngle;
+
     private void Awake()
     {
         // Get the reference to the attached character controller Component
@@ -43,11 +48,20 @@ public class ThirdPersonMovement : MonoBehaviour
         // Make the player move
         if(movementInput.magnitude >= 0.1f)
         {
-            float targetAngle = Mathf.Atan2(movementInput.x, movementInput.z) * Mathf.Rad2Deg;
-            //Debug.Log($"target angle is {targetAngle}");
-            //Change the rotation angle of the player
-            transform.rotation = Quaternion.Euler(0, targetAngle, 0);
-            controller.Move(movementInput * currentSpeed * Time.deltaTime);
+            float targetAngle = Mathf.Atan2(movementInput.x, movementInput.z) 
+                // Make sure to convert the Atan2 (radians) to degreees
+                * Mathf.Rad2Deg
+                // Make sure to add the Camera's angle to respect the direction of the camera
+                + camera.transform.eulerAngles.y;
+            // Apply a smoothing to the angle using the Mathf.SmoothDampAngle function
+            currentAngle = Mathf.SmoothDampAngle(currentAngle, targetAngle, ref currentAngleVelocity, rotationSmoothTime);
+            //Change the rotation angle of the player to use the smooth angle value
+            transform.rotation = Quaternion.Euler(0, currentAngle, 0);
+
+            // To move in the rotated direction considering the camera angle
+            // We need to multiply the target angle with the forward direction
+            Vector3 rotatedMovement = Quaternion.Euler(0, targetAngle, 0) * Vector3.forward;
+            controller.Move(rotatedMovement * currentSpeed * Time.deltaTime);
         }
     }
 }
