@@ -8,21 +8,30 @@ public class ThirdPersonMovement : MonoBehaviour
     private Camera camera;
 
     [SerializeField]
-    private float moveSpeed = 2.0f;
+    private float walkSpeed = 2.0f;
+    [SerializeField]
+    private float sprintSpeed = 5.0f;
     [SerializeField]
     private float rotationSmoothTime = 0.1f;
+
+    private Animator animator;
     
     private CharacterController controller;
     private float gravity = -9.8f;
 
     private float currentSpeed;
+    private float targetSpeed;
     private float currentAngleVelocity;
     private float currentAngle;
+
+    private bool isRunning;
 
     private void Awake()
     {
         // Get the reference to the attached character controller Component
         controller = GetComponent<CharacterController>();
+        // Get the reference to the attached animator Component
+        animator = GetComponent<Animator>();
         // automatically set up reference to the camera to avoid null reference error
         if(camera == null)
         {
@@ -42,9 +51,23 @@ public class ThirdPersonMovement : MonoBehaviour
             0,
             Input.GetAxis("Vertical"));
 
-        // Later on, apply a sprinting speed
-        currentSpeed = moveSpeed;
+        // Store boolean to check if the shift has been pressed
+        isRunning = Input.GetKey(KeyCode.LeftShift);
 
+        targetSpeed = isRunning ? sprintSpeed : walkSpeed;
+
+       
+        if(movementInput == Vector3.zero)
+        {
+            // Set speed to 0 when there is no input
+            targetSpeed = 0;
+        }
+
+        currentSpeed = targetSpeed;
+        // The momvementInput determines whether we are making the character move so we will
+        // use it for the animator
+        animator.SetFloat("moveSpeed", movementInput.magnitude);
+        animator.SetBool("isRunning", isRunning);
         // Make the player move
         if(movementInput.magnitude >= 0.1f)
         {
